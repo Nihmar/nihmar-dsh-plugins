@@ -184,7 +184,8 @@ Verificato in isolamento (profilo reale in un `DSH_HOME` separato, Chromium head
 | griglia con drawer aperto | `0px 390px 0px`: la chat non viene schiacciata |
 | velo | opacità `1`, `pointer-events: auto` |
 | opacità del drawer | fondo `rgb(255,255,255)` opaco: un blocco iniettato dietro non si vede più |
-| pulsante flottante | `46×46`, `position: fixed`, glifo `≡` ↔ `✕` |
+| pulsante flottante | `40×40`, `position: fixed` in alto a destra, glifo `≡` ↔ `✕` |
+| composer a 390px | cinque controlli da 38px (invio 44px), 214px in totale invece di 262 |
 | errori nel log | nessuno |
 
 Ciclo completo verificato in Chromium headless a 390×844: apertura dal pulsante, chiusura
@@ -196,6 +197,24 @@ riporta `hover: none` **a qualunque larghezza**, anche a 1200px. Perciò la rami
 La correttezza delle condizioni è invece verificata ispezionando le regole come le ha
 analizzate il browser: quattro blocchi `(max-width: 1023px) and (hover: none)` e un blocco
 di esclusione `(min-width: 1024px), (hover: hover) and (pointer: fine)`.
+
+## Composer: recuperare spazio invece di togliere funzioni
+
+Misurato a 390px, la riga del composer conteneva cinque controlli da 44px con 12px di
+spazio fra loro: **262px di soli pulsanti in una card da 348**, e al nome del modello
+restavano 24px, cioè `"DeepSeek-V41-Fla…"`.
+
+Nessuno dei cinque è eliminabile — ognuno apre qualcosa che non è altrove: `+` il selettore
+comandi, la graffetta gli allegati, il lucchetto la modalità di accesso, poi modello e
+invio. Quindi si recupera spazio:
+
+- bersagli a **38px** invece di 44 (le linee guida parlano di 44 *quando ci stanno*; qui
+  non ci stanno, e l'alternativa era nascondere funzioni);
+- il **nome del modello sparisce sotto i 480px**, resta l'icona che apre il menu: era
+  comunque troncato a metà, quindi non si perde informazione leggibile;
+- l'**invio resta a 44px**, perché è l'azione primaria.
+
+Risultato: 214px di controlli invece di 262.
 
 ## Verifica rapida
 

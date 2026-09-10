@@ -200,6 +200,37 @@ body:has([role="dialog"][aria-modal="true"]) #dsh-mobile-rail-veil {
     min-width: 44px;
   }
 
+  /* ── composer: cinque controlli in 348px ─────────────────────────────────────
+     Misurato a 390px: `+` 44px, graffetta 44px, lucchetto 44px, modello 46px,
+     invio 44px, con 12px di spazio fra loro: 262px di soli controlli, e al nome
+     del modello restavano 24px ("DeepSeek-V41-Fla…"). Nessuno dei cinque è
+     eliminabile — ognuno apre qualcosa che non è altrove — quindi si recupera
+     spazio invece di togliere funzioni. */
+  [data-composer-card] button,
+  [data-composer-card] [role="combobox"] {
+    min-width: 38px;
+    min-height: 38px;
+    padding-left: 7px;
+    padding-right: 7px;
+  }
+
+  /* Il pulsante di invio resta il bersaglio più grande: è l'azione primaria. */
+  [data-composer-card] button[class*="primary"] {
+    min-width: 44px;
+    min-height: 44px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  /* Sotto i 480px il nome del modello non ci sta comunque: meglio l'icona che
+     una sigla troncata a metà. La scelta resta nel menu, che si apre al tocco. */
+  @media (max-width: 480px) {
+    [data-slot="conversation.input.model"] {
+      max-width: 40px;
+      overflow: hidden;
+    }
+  }
+
   /* Sotto i 16px iOS zooma da solo sul focus: meglio non dargli motivo. */
   [data-slot="conversation"] input,
   [data-slot="conversation"] textarea {
