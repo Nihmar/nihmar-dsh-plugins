@@ -1,0 +1,30 @@
+# lan-polyfill bundle patch.
+#
+# Applicato dal layer dei bundle del profilo `web`, cioè alla composizione
+# d'avvio. NON è sorvegliato dal watcher del patch utente: con
+# `patchReload: live` ogni modifica al `cordis.patch.yml` del profilo fa
+# ricomporre e riapplicare TUTTO l'albero su un processo già vivo, e in quella
+# ricomposizione a caldo un `insert` di questo modulo faceva fallire la
+# preparazione delle estensioni DeepSeek, rompendo la chat con
+# "DeepSeek request extension preparation failed (REQUEST_EXTENSION)".
+# Un bundle viene composto all'avvio: qui l'insert è sicuro.
+#
+# Il binding `webserver.host: 0.0.0.0` NON è duplicato qui: resta nel
+# `cordis.patch.yml` del profilo, che è il posto da cui l'accesso remoto è
+# sempre dipeso. Un solo posto per una sola decisione.
+#
+# `./<file>.js` si risolve dentro la directory di questo bundle.
+
+- insert:
+    # Asset serviti e iniettati nell'index: polyfill di crypto.randomUUID,
+    # vestizione mobile, pulsante per la sidebar a drawer.
+    - id: lan-polyfill
+      name: './index.js'
+      inject: [webServer]
+
+    # Imbotto d'ingresso: al posto del 303 sulla URL col token serve una pagina
+    # con un pulsante, così il primo accesso dal telefono non costringe a
+    # copiare l'URL a mano in un browser.
+    - id: lan-interstitial
+      name: './interstitial.js'
+      inject: [webServer, connection]

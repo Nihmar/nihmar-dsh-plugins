@@ -1,0 +1,22 @@
+{
+  "name": "lan-polyfill",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DSH profile bundle: crypto.randomUUID polyfill, entry interstitial and mobile (smartphone) shell for the Web GUI served over plain HTTP on a LAN/VPN address.",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "polyfill.js",
+    "interstitial.js",
+    "mobile.css",
+    "mobile-rail.js",
+    "cordis.patch.yml"
+  ],
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

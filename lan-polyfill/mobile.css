@@ -1,0 +1,238 @@
+/* mobile.css — vestizione per smartphone, iniettata dal bundle.
+ *
+ * Perché serve: il frame di DSH è una griglia CSS con le colonne calcolate in
+ * JS e nessuna media query. Sotto i 1024px la sidebar si riduce a una rail da
+ * 56px (`computeColumns`: `sidebar === 0 ? 56 : …`), spazio tolto alla chat per
+ * il solo gusto di mostrare delle icone. E il toggle, sotto quella soglia,
+ * riporta la sidebar a 264–420px: su 390px di viewport schiaccia il contenuto a
+ * poche decine di pixel (misurato: `280px 110px 0px`).
+ *
+ * Qui: la rail costa zero, e la sidebar espansa diventa un pannello sopra il
+ * contenuto (drawer) invece di spingere la chat fuori schermo.
+ *
+ * ── La condizione non è solo la larghezza ────────────────────────────────────
+ * Una finestra desktop stretta (sotto i 1024px DSH passa in modalità rail) ha
+ * ancora mouse e hover: lì la rail resta utile e un drawer con velo è di troppo.
+ * Per questo ogni blocco chiede `(hover: none)`, cioè un dispositivo senza
+ * puntatore — telefono o tablet. Su un desktop, qualunque sia la larghezza,
+ * valgono rail e pannelli normali.
+ *
+ * Nota: le custom property NON funzionano dentro una media query
+ * (`@media (--flag: 1)` è sempre falsa, verificato), quindi la condizione è
+ * ripetuta per intero in ogni blocco invece di essere centralizzata.
+ *
+ * ── Selettori ────────────────────────────────────────────────────────────────
+ * Le classi del build sono hashaté da CSS modules (`pI_x6G_frame`,
+ * `pI_x6G_sidebarCol`), quindi non sono un aggancio stabile. Si usano
+ * l'attributo `data-sidebar-collapsed` del frame, selettori a sottostringa sulla
+ * parte stabile del nome, e gli attributi `data-slot` dichiarati dalla shell.
+ */
+
+/* ── rail a costo zero quando è collassata ─────────────────────────────────── */
+
+@media (max-width: 1023px) and (hover: none) {
+  /* Il frame dichiara le colonne inline; qui la prima va davvero a zero.
+     Verificato: da `56px minmax(0,1fr) 0px` a `0px 390px 0px`. */
+  [data-sidebar-collapsed] {
+    grid-template-columns: 0 minmax(0, 1fr) 0 !important;
+  }
+  /* La colonna della sidebar, quando è la rail, non deve occupare né intercettare
+     tocchi. Larghezza misurata in questo stato: 20px. */
+  [data-sidebar-collapsed] [class*="sidebarCol"] {
+    width: 0 !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+}
+
+/* ── drawer: la sidebar espansa sta sopra il contenuto ─────────────────────── */
+
+@media (max-width: 1023px) and (hover: none) {
+  /* Con il drawer aperto la colonna della griglia resta a zero: lo spazio lo
+     prende la chat, e la sidebar sta sopra come pannello. Senza questo, la
+     colonna ritaglia il drawer alla sua larghezza (misurato: 280 invece di 340). */
+  [class*="frame"]:not([data-sidebar-collapsed]) {
+    grid-template-columns: 0 minmax(0, 1fr) 0 !important;
+  }
+  /* La colonna resta a zero nella griglia: lo spazio lo prende la chat. */
+  [class*="sidebarCol"] {
+    width: 0 !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+  /* Fuori dallo stato collassato, la sidebar si stacca e va sopra il contenuto.
+     ATTENZIONE al bersaglio: `[data-slot="sidebar"]` è un guscio con
+     `display: contents` e larghezza 0; mettergli `position: fixed` non mostra
+     nulla — il pannello resta invisibile e il velo scurisce e basta.
+     Il menu vero è il suo figlio `*_root`, largo 280: è quello da posizionare. */
+  [class*="frame"]:not([data-sidebar-collapsed]) [data-slot="sidebar"] > [class*="_root"] {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    right: auto !important;
+    width: min(86vw, 340px) !important;
+    max-width: 100vw !important;
+    height: 100dvh !important;
+    z-index: 40 !important;
+    padding-top: env(safe-area-inset-top) !important;
+    padding-bottom: env(safe-area-inset-bottom) !important;
+    /* Fondo OPACO.
+       Prima qui c'era `transparent` per "ereditare il tema": ma il menu non ha
+       un fondo proprio — è il contenitore a dipingere — quindi il drawer lasciava
+       vedere la chat sottostante, e con contenuti scuri il risultato era una
+       mescolanza illeggibile (riprodotto: un blocco di prova iniettato si vedeva
+       attraverso, a piena intensità).
+       Il tema lo decide l'attributo che la shell mette sulla radice,
+       `data-ds-dark-theme`, non la preferenza di sistema: `light-dark()`
+       seguirebbe l'OS e darebbe il colore sbagliato a chi sceglie tema chiaro in
+       DSH su un sistema scuro. La variante scura è due regole più sotto. */
+    background-color: #ffffff !important;
+    color: inherit;
+    border-right: 1px solid var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.3)) !important;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    /* Su mobile la scrollbar di sistema è una barra spessa e opaca: dentro un
+       drawer largo 340px diventa una striscia bianca sul contenuto. */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(127, 127, 127, 0.4) transparent;
+  }
+  [class*="frame"]:not([data-sidebar-collapsed]) [data-slot="sidebar"] > [class*="_root"]::-webkit-scrollbar {
+    width: 4px;
+  }
+  [class*="frame"]:not([data-sidebar-collapsed]) [data-slot="sidebar"] > [class*="_root"]::-webkit-scrollbar-thumb {
+    background: rgba(127, 127, 127, 0.4);
+    border-radius: 999px;
+  }
+
+  /* Variante scura del fondo del drawer. `data-ds-dark-theme` è l'attributo che
+     la shell mette sulla radice quando il tema è scuro: è il segnale vero, non
+     la preferenza di sistema. */
+  [data-ds-dark-theme] [class*="frame"]:not([data-sidebar-collapsed]) [data-slot="sidebar"] > [class*="_root"],
+  html[data-ds-dark-theme] [data-slot="sidebar"] > [class*="_root"] {
+    background-color: #1b1e24 !important;
+  }
+}
+
+/* ── velo e pulsante flottante (elementi creati da mobile-rail.js) ─────────── */
+
+@media (max-width: 1023px) and (hover: none) {
+  #dsh-mobile-rail-veil {
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    background: rgba(0, 0, 0, 0.44);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 140ms ease;
+  }
+  body[data-dsh-mobile-rail-open="true"] #dsh-mobile-rail-veil {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* In alto a destra, appena sotto l'header.
+     Perché non in basso: la zona del composer cambia altezza (riga del modello,
+     riga di invio, testo che cresce) e qualunque quota dal basso finisce prima
+     o poi sopra il composer — che è quello che si vedeva come "pulsante a metà
+     schermo". L'altezza dell'header invece è stabile. La quota resta una
+     variabile, così si sposta senza toccare il resto. */
+  #dsh-mobile-rail-toggle {
+    position: fixed;
+    right: max(12px, env(safe-area-inset-right));
+    top: calc(env(safe-area-inset-top) + var(--dsh-mobile-fab-top, 92px));
+    z-index: 41;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid rgba(127, 127, 127, 0.35);
+    border-radius: 999px;
+    /* Fondo traslucido invece di un colore di tema: nessun token di superficie
+       esiste in DSH, e un colore fisso stona con il tema chiaro. */
+    background: rgba(127, 127, 127, 0.2);
+    color: inherit;
+    font-size: 17px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #dsh-mobile-rail-toggle:active {
+    transform: scale(0.94);
+  }
+}
+
+/* Velo e pulsante non servono dove il comportamento telefono non vale: schermo
+   largo, oppure desktop con mouse anche se la finestra è stretta. */
+@media (min-width: 1024px), (hover: hover) and (pointer: fine) {
+  #dsh-mobile-rail-toggle,
+  #dsh-mobile-rail-veil {
+    display: none !important;
+  }
+}
+
+/* Con un modale aperto (onboarding, API key, impostazioni) non ci sovrapponiamo:
+   la shell rende i modali sopra tutto, quindi ci togliamo di mezzo. */
+body:has([role="dialog"][aria-modal="true"]) #dsh-mobile-rail-toggle,
+body:has([role="dialog"][aria-modal="true"]) #dsh-mobile-rail-veil {
+  display: none !important;
+}
+
+/* ── tipografia e bersagli tattili ─────────────────────────────────────────── */
+
+@media (max-width: 1023px) and (hover: none) {
+  html { -webkit-text-size-adjust: 100%; }
+
+  /* 44px è la misura sotto la quale un bersaglio si sbaglia col pollice. */
+  [data-slot="conversation.session.header.utilities"] button,
+  [data-slot="conversation.session.header.actions"] button,
+  [data-slot="conversation.session.header.corner"] button,
+  [data-composer-card] button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Sotto i 16px iOS zooma da solo sul focus: meglio non dargli motivo. */
+  [data-slot="conversation"] input,
+  [data-slot="conversation"] textarea {
+    font-size: 16px;
+  }
+
+  /* Il composer non deve mangiarsi metà schermo. */
+  [data-composer-card] textarea {
+    max-height: 30dvh;
+    overflow-y: auto;
+  }
+
+  /* Codice: un comando che va a capo spezzando il nome del file è illeggibile.
+     Meglio scorrimento orizzontale con font leggibile. */
+  [data-chat-flow] pre {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: 12.5px;
+    max-width: 100%;
+  }
+
+  /* Le tab in alto (Chat / Trajectory) respirano. */
+  [data-slot="conversation.session.header"] nav {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  [data-slot="conversation.session.header"] nav::-webkit-scrollbar { display: none; }
+
+  /* Area sicura: niente contenuto sotto notch o barra gesti. */
+  [data-slot="conversation.composer.bar"] {
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+
+  /* Niente rimbalzo elastico che sposta tutta la pagina. */
+  html, body { overscroll-behavior-y: contain; }
+}
